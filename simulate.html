@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>电动车油门极简仿真）</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/nexusui@2.0.10/dist/NexusUI.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; }
+        #container { display: flex; justify-content: space-around; flex-wrap: wrap; }
+        #magnet, #voltage { width: 45%; height: 500px; }
+        input[type=range] { width: 80%; }
+    </style>
+</head>
+<body>
+    <h2>电动车油门极简仿真）</h2>
+    <div id="container">
+        <div id="magnet"></div>
+        <div id="voltage"></div>
+    </div>
+    <p>
+        <label for="angleRange">旋转角度: <span id="angleValue">0</span>°</label><br />
+        <input type="range" id="angleRange" min="0" max="180" value="0" />
+         <div id="angleKnob"></div>
+    </p>
+    <p id="infoText"></p>
+
+    <script>
+        const B_max = 50;
+        const K = 0.08;
+        const V_ref = 0.5;
+        const R_outer = 1.0;
+        const R_inner = 0.7;
+        const angle_width = 180;
+
+        const angleSlider = document.getElementById("angleRange");
+        const angleValue = document.getElementById("angleValue");
+        const infoText = document.getElementById("infoText");
+        
+        
+        // 生成弧形的点坐标和磁感应强度色值（两边强，中间弱，颜色随旋转角度变化）
+        function generateArc(angleStart, angleEnd, r1, r2, steps = 100) {
+            let theta = [];
+            for (let i = 0; i <= steps; i++) {
+                theta.push(angleStart + (angleEnd - angleStart) * i / steps);
+            }
+            let x = [], y = [], intensity = [];
+            let centerAngle = angleStart + angle_width / 2; // 中心角度随旋转动态变化
+            for (let i = 0; i < theta.length; i++) {
+                let t = theta[i] * Math.PI / 180;
+                // 两边强，中间弱，颜色随旋转角度动态变化
+               let frac = 1.0 - 0.8 * Math.abs(theta[i] - centerAngle) / (angle_width / 2);
+               let color = Math.max(0.2, frac) * B_max;
+                x.push(r2 * Math.cos(t));
+                y.push(r2 * Math.sin(t));
+                intensity.push(color);
+            }
+            for (let i = theta.length - 1; i >= 0; i--) {
+                let t = theta[i] * Math.PI / 180;
+               let frac = 1.0 - 0.8 * Math.abs(theta[i] - centerAngle) / (angle_width / 2);
+               let color = Math.max(0.2, frac) * B_max;
+
+                x.push(r1 * Math.cos(t));
+                y.push(r1 * Math.sin(t));
+                intensity.push(color);
+            }
+            return { x, y, intensity };
+        }
+
+        function update(angle) {
+            angleValue.textContent = angle;
+            let B = B_max * Math.sin(angle * Math.PI / 360);
+            let B_real = -50 + 100 * angle / 180;
+            let V = V_ref + K * B;
+            infoText.textContent = `磁感应强度: ${B_real.toFixed(2)} mT，输出电压: ${V.toFixed(3)} V`;
+
+            let arc = generateArc(angle, angle + angle_width, R_inner, R_outer);
+
+            let magnetTrace = {
+                x: arc.x,
+                y: arc.y,
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    size: 8,
+                    color: arc.intensity,
+                    colorscale: 'YlOrRd',
+                    cmin: 0,
+                    cmax: B_max,
+                    colorbar: {
+                                title: '磁感应强度 (mT)',
+                              }
+
+                },
+                hovertemplate: '磁感应强度: %{marker.color:.1f} mT<extra></extra>'
+            };
+
+            let sensorTrace = {
+                x: [-R_outer - 0.1],
+                y: [0],
+                mode: 'markers+text',
+                type: 'scatter',
+                text: ['霍尔传感器'],
+                textposition: 'bottom center',
+                marker: { color: 'green', size: 12 }
+            };
+
+        Plotly.newPlot('magnet', [magnetTrace, sensorTrace], {
+                title: '仿真模型',
+                xaxis: { scaleanchor: 'y', visible: false, range: [-1.5, 1.5] },
+                yaxis: { visible: false, range: [-1.5, 1.5] },
+                margin: { t: 50 },
+                 showlegend: false  // 隐藏图例
+                  });
+
+
+            let theta_all = Array.from({ length: 300 }, (_, i) => i * 180 / 299);
+            let B_all = theta_all.map(t => B_max * Math.sin(t * Math.PI / 360));
+            let V_all = B_all.map(b => V_ref + K * b);
+
+            let voltageCurve = {
+                x: theta_all,
+                y: V_all,
+                type: 'scatter',
+                name: '输出电压',
+                line: { color: 'blue' }
+            };
+            let currentPoint = {
+                x: [angle],
+                y: [V],
+                type: 'scatter',
+                mode: 'markers',
+                marker: { color: 'red', size: 10 },
+                name: '当前角度'
+            };
+
+            Plotly.newPlot('voltage', [voltageCurve, currentPoint], {
+                title: '霍尔输出电压-角度关系',
+                xaxis: { title: '角度 (°)', range: [0, 180] },
+                yaxis: { title: '电压 (V)' },
+                margin: { t: 50 }
+            });
+        }
+
+        angleSlider.addEventListener("input", () => update(parseInt(angleSlider.value)));
+        update(0);
+    </script>
+</body>
+</html>
