@@ -2,80 +2,387 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8" />
-    <title>电动车油门极简仿真）</title>
+    <title>电动车油门霍尔传感器仿真</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://unpkg.com/nexusui@2.0.10/dist/NexusUI.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; }
-        #container { display: flex; justify-content: space-around; flex-wrap: wrap; }
-        #magnet, #voltage { width: 45%; height: 500px; }
-        input[type=range] { width: 80%; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f1b3a, #1c3b6a, #0f1b3a);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            background: rgba(25, 35, 60, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .panel:hover {
+            transform: translateY(-5px);
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4facfe;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .chart-container {
+            height: 400px;
+            width: 100%;
+        }
+        
+        .controls {
+            background: rgba(25, 35, 60, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .slider-container {
+            margin-bottom: 25px;
+            padding: 0 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 25px;
+            -webkit-appearance: none;
+            background: rgba(100, 120, 180, 0.3);
+            border-radius: 10px;
+            outline: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.7);
+            border: 2px solid white;
+        }
+        
+        .info-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #00f2fe;
+        }
+        
+        .info-label {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+        
+        .explanation {
+            background: rgba(25, 35, 60, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .explanation h2 {
+            color: #4facfe;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .explanation p {
+            margin-bottom: 15px;
+            line-height: 1.7;
+            font-size: 1.1rem;
+        }
+        
+        .explanation ul {
+            padding-left: 30px;
+            margin: 20px 0;
+        }
+        
+        .explanation li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .tech-specs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .spec-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .tech-specs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .tech-specs {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-    <h2>电动车油门极简仿真）</h2>
-    <div id="container">
-        <div id="magnet"></div>
-        <div id="voltage"></div>
+    <div class="container">
+        <header>
+            <h1>电动车油门霍尔传感器仿真</h1>
+            <p class="subtitle">本仿真演示了电动车油门系统中霍尔传感器的原理：旋转磁铁改变磁场分布，霍尔传感器检测磁感应强度变化并转换为电压信号，从而控制电机功率</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="panel">
+                <h2 class="panel-title">磁场分布模型</h2>
+                <div id="magnet" class="chart-container"></div>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title">输出电压特性曲线</h2>
+                <div id="voltage" class="chart-container"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <h2 class="panel-title">油门角度控制</h2>
+            
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>旋转角度</span>
+                    <span id="angleValue">0°</span>
+                </div>
+                <input type="range" id="angleRange" class="slider" min="0" max="180" value="0" />
+            </div>
+            
+            <div class="info-panel">
+                <div class="info-card">
+                    <div class="info-label">磁感应强度</div>
+                    <div id="bValue" class="info-value">-50.00 mT</div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-label">输出电压</div>
+                    <div id="vValue" class="info-value">0.500 V</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h2>霍尔传感器工作原理</h2>
+            <p>电动车油门系统使用基于霍尔效应的传感器来控制电车速度：</p>
+            
+            <ul>
+                <li>当驾驶员拧动油门时，与油门连接的磁铁随之旋转</li>
+                <li>霍尔传感器检测磁感应强度的变化，并将其转换为电压信号</li>
+                <li>电压信号经过处理后被发送到电机控制器</li>
+                <li>控制器根据电压值调整电机的功率输出</li>
+            </ul>
+            
+            <p>本仿真模型展示了磁铁旋转时磁场分布的变化，以及对应的输出电压曲线。</p>
+            
+            <div class="tech-specs">
+                <div class="spec-card">
+                    <h3>最大磁感应强度</h3>
+                    <p>50 mT</p>
+                </div>
+                <div class="spec-card">
+                    <h3>霍尔系数</h3>
+                    <p>0.08 V/mT</p>
+                </div>
+                <div class="spec-card">
+                    <h3>参考电压</h3>
+                    <p>0.5 V</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>电动车油门仿真系统 | 霍尔传感器技术演示 | © 2025 未来道具研究所</p>
+        </div>
     </div>
-    <p>
-        <label for="angleRange">旋转角度: <span id="angleValue">0</span>°</label><br />
-        <input type="range" id="angleRange" min="0" max="180" value="0" />
-         <div id="angleKnob"></div>
-    </p>
-    <p id="infoText"></p>
 
     <script>
-        const B_max = 50;
-        const K = 0.08;
-        const V_ref = 0.5;
-        const R_outer = 1.0;
-        const R_inner = 0.7;
-        const angle_width = 180;
+        // 常量定义
+        const B_max = 50;          // 最大磁感应强度 (mT)
+        const K = 0.08;            // 霍尔系数 (V/mT)
+        const V_ref = 0.5;         // 参考电压 (V)
+        const R_outer = 1.0;       // 外半径
+        const R_inner = 0.7;       // 内半径
+        const angle_width = 180;   // 磁铁角度范围
 
+        // DOM元素
         const angleSlider = document.getElementById("angleRange");
         const angleValue = document.getElementById("angleValue");
-        const infoText = document.getElementById("infoText");
-        
-        
-        // 生成弧形的点坐标和磁感应强度色值（两边强，中间弱，颜色随旋转角度变化）
+        const bValue = document.getElementById("bValue");
+        const vValue = document.getElementById("vValue");
+
+        // 生成弧形的点坐标和磁感应强度色值（两边强，中间弱）
         function generateArc(angleStart, angleEnd, r1, r2, steps = 100) {
             let theta = [];
             for (let i = 0; i <= steps; i++) {
                 theta.push(angleStart + (angleEnd - angleStart) * i / steps);
             }
+            
             let x = [], y = [], intensity = [];
-            let centerAngle = angleStart + angle_width / 2; // 中心角度随旋转动态变化
+            let centerAngle = angleStart + angle_width / 2;
+            
             for (let i = 0; i < theta.length; i++) {
                 let t = theta[i] * Math.PI / 180;
-                // 两边强，中间弱，颜色随旋转角度动态变化
-               let frac = 1.0 - 0.8 * Math.abs(theta[i] - centerAngle) / (angle_width / 2);
-               let color = Math.max(0.2, frac) * B_max;
+                
+                // 修正：颜色越深表示磁感应强度绝对值越大
+                // 计算当前点距离中心的相对位置（0=中心，1=边缘）
+                let distFromCenter = Math.abs(theta[i] - centerAngle) / (angle_width / 2);
+                // 磁感应强度：边缘强(1)，中心弱(0.2)
+                let strength = 0.2 + 0.8 * distFromCenter;
+                let color = strength * B_max;
+                
                 x.push(r2 * Math.cos(t));
                 y.push(r2 * Math.sin(t));
                 intensity.push(color);
             }
+            
             for (let i = theta.length - 1; i >= 0; i--) {
                 let t = theta[i] * Math.PI / 180;
-               let frac = 1.0 - 0.8 * Math.abs(theta[i] - centerAngle) / (angle_width / 2);
-               let color = Math.max(0.2, frac) * B_max;
-
+                
+                let distFromCenter = Math.abs(theta[i] - centerAngle) / (angle_width / 2);
+                let strength = 0.2 + 0.8 * distFromCenter;
+                let color = strength * B_max;
+                
                 x.push(r1 * Math.cos(t));
                 y.push(r1 * Math.sin(t));
                 intensity.push(color);
             }
+            
             return { x, y, intensity };
         }
 
+        // 更新仿真
         function update(angle) {
-            angleValue.textContent = angle;
+            angleValue.textContent = angle + "°";
+            
+            // 计算磁感应强度（保持原始计算方式）
             let B = B_max * Math.sin(angle * Math.PI / 360);
-            let B_real = -50 + 100 * angle / 180;
+            // 保持原始电压曲线计算方式
             let V = V_ref + K * B;
-            infoText.textContent = `磁感应强度: ${B_real.toFixed(2)} mT，输出电压: ${V.toFixed(3)} V`;
-
+            
+            // 更新数值显示
+            bValue.textContent = (2*B-50).toFixed(2) + " mT";
+            vValue.textContent = V.toFixed(3) + " V";
+            
+            // 生成磁铁弧形区域
             let arc = generateArc(angle, angle + angle_width, R_inner, R_outer);
-
+            
+            // 创建磁场分布图
             let magnetTrace = {
                 x: arc.x,
                 y: arc.y,
@@ -84,17 +391,21 @@
                 marker: {
                     size: 8,
                     color: arc.intensity,
-                    colorscale: 'YlOrRd',
+                    colorscale: 'Viridis',
                     cmin: 0,
                     cmax: B_max,
                     colorbar: {
-                                title: '磁感应强度绝对值(mT)',
-                              }
-
+                        title: '磁感应强度 (mT)',
+                        titleside: 'right',
+                        titlefont: { color: 'white' },
+                        tickfont: { color: 'white' }
+                    },
+                    line: { width: 0 }
                 },
                 hovertemplate: '磁感应强度: %{marker.color:.1f} mT<extra></extra>'
             };
-
+            
+            // 霍尔传感器位置
             let sensorTrace = {
                 x: [-R_outer - 0.1],
                 y: [0],
@@ -102,46 +413,106 @@
                 type: 'scatter',
                 text: ['霍尔传感器'],
                 textposition: 'bottom center',
-                marker: { color: 'green', size: 12 }
+                textfont: { color: 'white', size: 16 },
+                marker: { 
+                    color: '#00ff00', 
+                    size: 20,
+                    symbol: 'square',
+                    line: { width: 2, color: 'white' }
+                }
             };
-
-        Plotly.newPlot('magnet', [magnetTrace, sensorTrace], {
-                title: '仿真模型',
-                xaxis: { scaleanchor: 'y', visible: false, range: [-1.5, 1.5] },
-                yaxis: { visible: false, range: [-1.5, 1.5] },
-                margin: { t: 50 },
-                 showlegend: false  // 隐藏图例
-                  });
-
-
+            
+            // 磁铁中心标记
+            let centerTrace = {
+                x: [0],
+                y: [0],
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    size: 10,
+                    symbol: 'x'
+                },
+                hoverinfo: 'skip'
+            };
+            
+            // 绘制磁场分布图
+            Plotly.newPlot('magnet', [magnetTrace, sensorTrace, centerTrace], {
+                title: '磁场分布模型 (旋转角度: ' + angle + '°)',
+                titlefont: { color: 'white' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                xaxis: { 
+                    scaleanchor: 'y', 
+                    visible: false, 
+                    range: [-1.5, 1.5],
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                yaxis: { 
+                    visible: false, 
+                    range: [-1.5, 1.5],
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                margin: { t: 50, b: 20, l: 20, r: 50 },
+                showlegend: false
+            });
+            
+            // 创建电压曲线（保持原始曲线）
             let theta_all = Array.from({ length: 300 }, (_, i) => i * 180 / 299);
             let B_all = theta_all.map(t => B_max * Math.sin(t * Math.PI / 360));
             let V_all = B_all.map(b => V_ref + K * b);
-
+            
             let voltageCurve = {
                 x: theta_all,
                 y: V_all,
                 type: 'scatter',
                 name: '输出电压',
-                line: { color: 'blue' }
+                line: { color: '#4facfe', width: 3 }
             };
+            
             let currentPoint = {
                 x: [angle],
                 y: [V],
                 type: 'scatter',
                 mode: 'markers',
-                marker: { color: 'red', size: 10 },
+                marker: { 
+                    color: '#00ff00', 
+                    size: 12,
+                    line: { width: 2, color: 'white' }
+                },
                 name: '当前角度'
             };
-
+            
+            // 绘制电压曲线图
             Plotly.newPlot('voltage', [voltageCurve, currentPoint], {
-                title: '霍尔输出电压-角度关系',
-                xaxis: { title: '角度 (°)', range: [0, 180] },
-                yaxis: { title: '电压 (V)' },
-                margin: { t: 50 }
+                title: '输出电压特性曲线',
+                titlefont: { color: 'white' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0.2)',
+                xaxis: { 
+                    title: '角度 (°)',
+                    titlefont: { color: 'white' },
+                    tickfont: { color: 'white' },
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    range: [0, 180]
+                },
+                yaxis: { 
+                    title: '电压 (V)', 
+                    titlefont: { color: 'white' },
+                    tickfont: { color: 'white' },
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    range: [0, 5]
+                },
+                margin: { t: 50, b: 60, l: 60, r: 30 },
+                legend: {
+                    font: { color: 'white' },
+                    orientation: 'h',
+                    y: -0.25
+                }
             });
         }
 
+        // 初始化
         angleSlider.addEventListener("input", () => update(parseInt(angleSlider.value)));
         update(0);
     </script>

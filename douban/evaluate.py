@@ -3,7 +3,7 @@ import csv
 from bs4 import BeautifulSoup
 
 # 指向目录，而非具体文件
-dest_dir = r"C:\Users\20342\Desktop\final"  # 或使用 "C:/Users/..."
+dest_dir = r"C:\Users\20342\Desktop\final\douban"  # 或使用 "C:/Users/..."
 output_file = os.path.join(dest_dir, "douban_movies.csv")  # 输出CSV文件路径
 error_log = os.path.join(dest_dir, "parsing_errors.log")  # 错误日志路径
 

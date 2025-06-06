@@ -10,7 +10,7 @@ db = MySQLDatabase(
     host='localhost',
     port=3306,
     user='root',
-    password='password',
+    password='0416',
     charset='utf8mb4'
 )
 
