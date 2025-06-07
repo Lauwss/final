@@ -1,0 +1,94 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{fullpage}
+
+\usepackage{tikz-uml}
+
+\begin{document}
+
+\begin{center}
+\begin{tikzpicture}
+
+\begin{umlpackage}{shoppingSystem}
+
+% 类定义及坐标
+\umlclass[x=1, y=1]{Customer}{
+    name : string \\
+    contact : string \\
+    deliveryAddress : string \\
+    active : boolean
+}{}
+
+\umlclass[x=1, y=-5]{Order}{
+    createDate : Date \\
+    status : CREATE, PAID, SHIPPING, DELIVERED, CANCEL
+}{}
+
+\umlclass[x=1, y=-9]{OrderDetail}{
+    quantity : int
+}{
+    calculateSubTotal() : float \\
+    calculateWeight() : float
+}
+
+\umlclass[x=1, y=-14]{Product}{
+    title : string \\
+    weight : float \\
+    description : string
+}{
+    getPriceForQuantity(qty : int) : float \\
+    getWeight() : float
+}
+
+\umlclass[x=6, y=-2]{Payment}{
+    amount : float
+}{}
+
+\umlclass[x=11, y=1]{Credit}{
+    number : string \\
+    type : string \\
+    expireDate : string
+}{}
+
+\umlclass[x=11, y=-2]{Cash}{
+    cashTendered : float
+}{}
+
+\umlclass[x=11, y=-5]{WireTransfer}{
+    bankID : string \\
+    bankName : string
+}{}
+
+\umlclass[x=11, y=-8]{AliPay}{
+    number : string
+}{}
+
+\umlclass[x=11, y=-11]{WeixinPay}{
+    number : string
+}{}
+
+% 关联关系，带角色名和多重性，geometry折线路径
+\umlassoc[arg1=placesOrders, mult1=1, arg2=orders, mult2=0..*]{Customer}{Order}
+
+\umlunicompo[arg1=order, mult1=1, arg2=items, mult2=1..*]{Order}{OrderDetail}
+
+\umlassoc[arg1=orderDetail, mult1=1, arg2=product, mult2=1]{OrderDetail}{Product}
+
+\umlassoc[arg1=order, mult1=1, arg2=payments, mult2=0..*]{Order}{Payment}
+
+% 继承关系
+\umlinherit[geometry=-|-]{Credit}{Payment}
+\umlinherit[geometry=-|-]{Cash}{Payment}
+\umlinherit[geometry=-|-]{WireTransfer}{Payment}
+\umlinherit[geometry=-|-]{AliPay}{Payment}
+\umlinherit[geometry=-|-]{WeixinPay}{Payment}
+
+\end{umlpackage}
+
+\end{tikzpicture}
+\end{center}
+
+\end{document}
