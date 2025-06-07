@@ -1,5 +1,6 @@
 import os
 import csv
+import re
 from bs4 import BeautifulSoup
 
 # 指向目录，而非具体文件
@@ -23,7 +24,7 @@ if not os.path.isdir(dest_dir):
 
 # 准备 CSV 文件并写入表头
 with open(output_file, 'w', newline='', encoding='utf-8-sig') as csvfile:
-    fieldnames = ['标题', '评分', '评论数', '导演与演员', '链接', '图片链接']
+    fieldnames = ['标题', '评分', '评论数', '年份', '链接', '图片链接']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
 
@@ -37,7 +38,7 @@ for html_file in os.listdir(dest_dir):
         with open(file_path, 'r', encoding='utf-8') as f:
             html = f.read()
 
-        # 抽取文件内容
+        # 解析文件内容
         soup = BeautifulSoup(html, 'html.parser')
         movie_list = soup.find('ol', class_='grid_view')
 
@@ -50,7 +51,6 @@ for html_file in os.listdir(dest_dir):
         movie_items = movie_list.find_all('li')
         print(f"找到 {len(movie_items)} 个电影项")
 
-        # 准备数据并追加到 CSV
         success_count = 0
         for i, movie in enumerate(movie_items):
             try:
@@ -67,9 +67,13 @@ for html_file in os.listdir(dest_dir):
                 comment_span = bd_div.find(lambda tag: tag.name == 'span' and '人评价' in tag.text) if bd_div else None
                 comment_num = comment_span.get_text(strip=True) if comment_span else "未找到评论数"
 
-                # 提取导演和演员
+                # 提取导演和演员（含年份）
                 p_tag = bd_div.find('p') if bd_div else None
-                directors = p_tag.get_text(strip=True) if p_tag else "未找到导演信息"
+                directors_and_actors = p_tag.get_text(strip=True) if p_tag else "未找到导演信息"
+
+                # 用正则提取4位数字年份
+                year_match = re.search(r'(\d{4})', directors_and_actors)
+                year = year_match.group(1) if year_match else "未找到年份"
 
                 # 提取链接和图片
                 pic_div = movie.find('div', class_='pic')
@@ -84,7 +88,7 @@ for html_file in os.listdir(dest_dir):
                     '标题': title,
                     '评分': rating_num,
                     '评论数': comment_num,
-                    '导演与演员': directors,
+                    '年份': year,
                     '链接': link,
                     '图片链接': pic
                 }
@@ -101,7 +105,7 @@ for html_file in os.listdir(dest_dir):
                 print(f"警告: {error_msg}")
                 with open(error_log, 'a', encoding='utf-8') as f:
                     f.write(f"文件 {html_file}, 电影项 {i+1}: {error_msg}\n")
-                    f.write(f"HTML片段: {movie.prettify()[:500]}...\n\n")  # 记录出错的 HTML 片段
+                    f.write(f"HTML片段: {movie.prettify()[:500]}...\n\n")
 
         print(f"成功保存 {success_count} 条电影数据到 {output_file}")
         print(f"解析错误: {len(movie_items) - success_count} 条")
